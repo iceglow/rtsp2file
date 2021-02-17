@@ -10,4 +10,6 @@ RUN apk update && \
     apk add live-media-utils nodejs npm && \
     npm install
 
+EXPOSE 80
+
 ENTRYPOINT [ "npm", "start" ]
