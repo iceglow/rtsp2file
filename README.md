@@ -34,6 +34,20 @@ _/app/config_ - config location
 docker run -p 80:80 -v /path/to/config/:/app/config iceglow/rtsp2file:latest
 ```
 
+### Use the API
+Sample call
+
+```shell
+curl --location --request POST '127.0.0.1:80/record' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "source_name": "MySource",
+    "stream_url": "rtsp://user:pass@camera.example.com:554/cam/realmonitor?channel=1&subtype=0&unicast=true&proto=Onvif",
+    "duration": 30,
+    "part_duration": 10    
+}'
+```
+
 ## Source
 Interested in cloning or contributing? check out the source at [GitHub](https://github.com/iceglow/rtsp2file) 
 
