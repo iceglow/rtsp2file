@@ -3,6 +3,7 @@ FROM alpine:3.12.3
 WORKDIR /app
 
 ADD package.json package-lock.json server.js /app/
+COPY src/ /app/src/
 
 VOLUME [ "/app/config" ]
 
