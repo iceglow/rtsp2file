@@ -6,6 +6,7 @@ ADD package.json package-lock.json server.js /app/
 COPY src/ /app/src/
 
 VOLUME [ "/app/config" ]
+VOLUME [ "/app/cache" ]
 
 RUN apk update && \
     apk add live-media-utils nodejs npm && \

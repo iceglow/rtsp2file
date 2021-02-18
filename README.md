@@ -25,9 +25,11 @@ Variable | Description | Default value
 -------- | ----------- | -------------
 PORT | Exposed port of the API | 80
 RTSP2FILE_CONFIG | Config file location | /app/config/config.json
+RTSP2FILE_CACHE | Cache path | /app/cache
 
 ### Volumes
 _/app/config_ - config location
+_/app/cache_ - cache location, used to cache vido files before uploading
 
 ### Start the container
 ```shell

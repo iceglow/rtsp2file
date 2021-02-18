@@ -5,7 +5,7 @@ let cacheBaseDir = './';
 
 function getCacheDir(recievedDate) {
   const dateTime = recievedDate.toISOString().replace(/T/, '_').replace(/\..+/, '');
-  const cacheDir = cacheBaseDir + path.sep + fs.mkdtempSync("stream-" + dateTime + "-");
+  const cacheDir = fs.mkdtempSync(cacheBaseDir + path.sep + "stream-" + dateTime + "-");
   console.log('Creating cache dir "' + cacheDir + '"');
   return cacheDir;
 }

@@ -10,7 +10,7 @@ const router = express.Router();
 const app = express();
 
 const config_data = env.RTSP2FILE_CONFIG ? require(env.RTSP2FILE_CONFIG) : require('./config/config.json');
-const cacheBaseDir = env.RTSP2FILE_CACHE || '.';
+const cacheBaseDir = env.RTSP2FILE_CACHE || process.cwd() + '/cache';
 
 const cacheManager = require('./src/cache-manager')(cacheBaseDir);
 const streamReader = require('./src/stream-reader');
