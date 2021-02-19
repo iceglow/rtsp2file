@@ -10,6 +10,9 @@ The service expects a config file 'config.yml' to exist in the location /app/con
 #### Config sample
 An example _config.json_ can look like this:
 ```yaml
+api:
+  port: 80 # HTTP port to listen at
+  contextPath: "/" # The API context path
 ftp:
   host: "ftp.gluffs.eu"
   user: "cctv"
@@ -21,6 +24,7 @@ ftp:
 Variable | Description | Default value
 -------- | ----------- | -------------
 PORT | Exposed port of the API | 80
+CONTEXT_PATH | API context path | /
 RTSP2FILE_CONFIG | Config file location | /app/config/config.json
 RTSP2FILE_CACHE | Cache path | /app/cache
 

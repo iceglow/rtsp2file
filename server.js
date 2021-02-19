@@ -19,11 +19,6 @@ const ftpWriter = require('./src/ftp-writer');
 const router = express.Router();
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-var PORT = env.PORT || 80;
-
 router.post('/record', function (req, res) {
   const name = req.body.source_name;
   const streamUrl = req.body.stream_url;
@@ -62,8 +57,13 @@ router.post('/record', function (req, res) {
   }
 });
 
-app.use('/', router);
+const port = env.PORT || config.api.port || 80;
+const contextPath = env.CONTEXT_PATH || config.api.contextPath || '/';
 
-app.listen(PORT, () => {
-  logger.info("Server listening at port: %s", PORT)
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(contextPath, router);
+
+app.listen(port, () => {
+  logger.info("Server listening at port %s, context path %s", port, contextPath);
 });
