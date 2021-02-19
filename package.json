@@ -1,11 +1,12 @@
 {
   "name": "rtsp2file",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Asynchronously start consumption of a RTSP via API and save it to file.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "docker-publish": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t iceglow/rtsp2file:$npm_package_version -t iceglow/rtsp2file:latest --push ."
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,8 @@
     "basic-ftp": "^4.6.3",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
+    "pino": "^6.11.1",
+    "pino-pretty": "^4.5.0",
     "queue-promise": "^2.1.0",
     "rxjs": "^6.6.3"
   }

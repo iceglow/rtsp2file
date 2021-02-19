@@ -3,6 +3,7 @@
 var env = process.env;
 
 const Queue = require('queue-promise');
+const logger = require('./src/logging-service').logger;
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -29,34 +30,38 @@ router.post('/record', function (req, res) {
 
   const recievedDate = new Date();
 
-  console.log("Starting work on " + name);
+  logger.info(`/record request named '${name}'`);
 
-  ftpWriter.connect(config_data).then(client => {
-    const cacheDir = cacheManager.getCacheDir(recievedDate);
-    const queue = new Queue({
-      concurrent: 1,
-      interval: 1000
-    });
-    
-    streamReader.start(cacheDir, recievedDate, streamUrl, duration, partDuration).subscribe(file => {
-      queue.enqueue(async () => {
-        await ftpWriter.upload(client, file, recievedDate, name); 
+  try {
+    ftpWriter.connect(config_data).then(client => {
+      const cacheDir = cacheManager.getCacheDir(recievedDate);
+      const queue = new Queue({
+        concurrent: 1,
+        interval: 1000
       });
-    }, error => {
-      console.error("Error while processing request: " + error);
-      cacheManager.cleanupCache(cacheDir);
-    }, () => {
-      queue.on("end", () => cacheManager.cleanupCache(cacheDir));
+      
+      streamReader.start(cacheDir, recievedDate, streamUrl, duration, partDuration).subscribe(file => {
+        queue.enqueue(async () => {
+          await ftpWriter.upload(client, file, recievedDate, name); 
+        });
+      }, error => {
+        logger.error("Error while processing request: " + error);
+        cacheManager.cleanupCache(cacheDir);
+      }, () => {
+        queue.on("end", () => cacheManager.cleanupCache(cacheDir));
+      });
     });
-  });
+    res.json({ status: 'Ok' });
+  } catch (error) {
+    logger.error("Error while processing request /record: ", error);
 
-  res.json({ status: 'Ok' });
+    res.status(500)
+    res.json({ status: 'Error' });
+  }
 });
 
 app.use('/', router);
 
-var server = app.listen(PORT, function () {
-  var host = server.address().address
-  var port = server.address().port
-  console.log("Example app listening at http://%s:%s", host, port)
-})
+app.listen(PORT, () => {
+  logger.info("Server listening at port: %s", PORT)
+});
