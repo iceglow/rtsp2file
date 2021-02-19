@@ -8,7 +8,7 @@ There are some requirements in order to get this running.
 The service expects a config file 'config.yml' to exist in the location /app/config/ or otherwise specified in the env variable 'RTSP2FILE_CONFIG'.
 
 #### Config sample
-An example _config.json_ can look like this:
+An example _config.yml_ can look like this:
 ```yaml
 api:
   port: 80 # HTTP port to listen at
