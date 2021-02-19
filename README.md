@@ -5,19 +5,16 @@ Simple service to asynchronously start consumption of a stream using the Real Ti
 There are some requirements in order to get this running.
 
 ### Config
-The service expects a config file 'config.json' to exist in the location /app/config/ or otherwise specified in the env variable 'RTSP2FILE_CONFIG'.
+The service expects a config file 'config.yml' to exist in the location /app/config/ or otherwise specified in the env variable 'RTSP2FILE_CONFIG'.
 
 #### Config sample
 An example _config.json_ can look like this:
-```json
-{
-  "ftp": {
-    "host": "ftp.example.com",
-    "user": "cctv",
-    "password": "secret_pass",
-    "secure": true
-  }
-}
+```yaml
+ftp:
+  host: "ftp.gluffs.eu"
+  user: "cctv"
+  password: "secret_pass"
+  secure: true
 ```
 
 ### Environment variables
@@ -33,7 +30,7 @@ _/app/cache_ - cache location, used to cache vido files before uploading
 
 ### Start the container
 ```shell
-docker run -p 80:80 -v /path/to/config/:/app/config iceglow/rtsp2file:latest
+docker run -p 80:80 -v /path/to/config/:/app/config -v /path/to/cache/:/app/cache iceglow/rtsp2file:latest
 ```
 
 ### Use the API

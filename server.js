@@ -4,18 +4,20 @@ var env = process.env;
 
 const Queue = require('queue-promise');
 const logger = require('./src/logging-service').logger;
+const configYaml = require('config-yaml');
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const router = express.Router();
-const app = express();
 
-const config_data = env.RTSP2FILE_CONFIG ? require(env.RTSP2FILE_CONFIG) : require('./config/config.json');
+const config = configYaml(env.RTSP2FILE_CONFIG || `${process.cwd()}/config/config.yml`);
 const cacheBaseDir = env.RTSP2FILE_CACHE || process.cwd() + '/cache';
 
 const cacheManager = require('./src/cache-manager')(cacheBaseDir);
 const streamReader = require('./src/stream-reader');
 const ftpWriter = require('./src/ftp-writer');
+
+const router = express.Router();
+const app = express();
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -33,7 +35,7 @@ router.post('/record', function (req, res) {
   logger.info(`/record request named '${name}'`);
 
   try {
-    ftpWriter.connect(config_data).then(client => {
+    ftpWriter.connect(config).then(client => {
       const cacheDir = cacheManager.getCacheDir(recievedDate);
       const queue = new Queue({
         concurrent: 1,
