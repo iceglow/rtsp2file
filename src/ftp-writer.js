@@ -14,32 +14,32 @@ class FileWriter {
     this.secure = config.secure
   }
 
-connect() {
-  return new Promise((resolve, reject) => {
-    logger.info(`Connecting to FTP server ${this.host}.`);
+  connect() {
+    return new Promise((resolve, reject) => {
+      logger.info(`Connecting to FTP server ${this.host}.`);
 
-    this.client.access({
-        host: this.host,
-        user: this.user,
-        password: this.password,
-        secure: this.secure
-    }).then(() => {
-      logger.debug(`Connected to FTP server ${this.host}.`);
-      resolve();
-    }).catch(reason => {
-      logger.error(`Error while connecting to FTP server (${this.host}): `, reason);
-      reject(reason);
+      this.client.access({
+          host: this.host,
+          user: this.user,
+          password: this.password,
+          secure: this.secure
+      }).then(() => {
+        logger.debug(`Connected to FTP server ${this.host}.`);
+        resolve();
+      }).catch(reason => {
+        logger.error(`Error while connecting to FTP server (${this.host}): `, reason);
+        reject(reason);
+      });
     });
-  });
-}
+  }
 
-async upload(file, date, name) {
-  const destination = '/' + date.toISOString().split('T')[0] + '/' + name;
-  logger.info("Uploading file: " + file + " -> " + destination);
+  async upload(file, date, name) {
+    const destination = '/' + date.toISOString().split('T')[0] + '/' + name;
+    logger.info("Uploading file: " + file + " -> " + destination);
 
-  await this.client.ensureDir(destination);
-  await this.client.uploadFrom(file, destination + '/' + path.basename(file));
-}
+    await this.client.ensureDir(destination);
+    await this.client.uploadFrom(file, destination + '/' + path.basename(file));
+  }
 
 }
 module.exports = FileWriter;
