@@ -3,36 +3,43 @@ const ftp = require("basic-ftp");
 
 const logger = require('./logging-service').logger;
 
-function connect(config_data) {
-  const client = new ftp.Client();
+class FileWriter {
 
+  constructor(config) {
+    this.client = new ftp.Client();
+    
+    this.host = config.host,
+    this.user = config.user,
+    this.password = config.password,
+    this.secure = config.secure
+  }
+
+connect() {
   return new Promise((resolve, reject) => {
-    logger.info(`Connecting to FTP server ${config_data.ftp.host}.`);
+    logger.info(`Connecting to FTP server ${this.host}.`);
 
-    client.access({
-        host: config_data.ftp.host,
-        user: config_data.ftp.user,
-        password: config_data.ftp.password,
-        secure: config_data.ftp.secure
+    this.client.access({
+        host: this.host,
+        user: this.user,
+        password: this.password,
+        secure: this.secure
     }).then(() => {
-      logger.debug(`Connected to FTP server ${config_data.ftp.host}.`);
-      resolve(client);
+      logger.debug(`Connected to FTP server ${this.host}.`);
+      resolve();
     }).catch(reason => {
-      logger.error(`Error while connecting to FTP server (${config_data.ftp.host}): `, reason);
+      logger.error(`Error while connecting to FTP server (${this.host}): `, reason);
       reject(reason);
     });
   });
 }
 
-async function upload(client, file, date, name) {
+async upload(file, date, name) {
   const destination = '/' + date.toISOString().split('T')[0] + '/' + name;
   logger.info("Uploading file: " + file + " -> " + destination);
 
-  await client.ensureDir(destination);
-  await client.uploadFrom(file, destination + '/' + path.basename(file));
+  await this.client.ensureDir(destination);
+  await this.client.uploadFrom(file, destination + '/' + path.basename(file));
 }
 
-module.exports = {
-  connect,
-  upload
-};
+}
+module.exports = FileWriter;

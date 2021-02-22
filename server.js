@@ -14,7 +14,8 @@ const cacheBaseDir = env.RTSP2FILE_CACHE || process.cwd() + '/cache';
 
 const cacheManager = require('./src/cache-manager')(cacheBaseDir);
 const streamReader = require('./src/stream-reader');
-const ftpWriter = require('./src/ftp-writer');
+const FtpWriter = require('./src/ftp-writer');
+const DropboxWriter = require('./src/dropbox-writer');
 
 const router = express.Router();
 const app = express();
@@ -24,37 +25,61 @@ router.post('/record', function (req, res) {
   const streamUrl = req.body.stream_url;
   const duration = req.body.duration;
   const partDuration = req.body.part_duration;
+  const destinations = req.body.destinations;
 
   const recievedDate = new Date();
-
   logger.info(`/record request named '${name}'`);
 
-  try {
-    ftpWriter.connect(config).then(client => {
-      const cacheDir = cacheManager.getCacheDir(recievedDate);
-      const queue = new Queue({
-        concurrent: 1,
-        interval: 1000
-      });
-      
-      streamReader.start(cacheDir, recievedDate, streamUrl, duration, partDuration).subscribe(file => {
-        queue.enqueue(async () => {
-          await ftpWriter.upload(client, file, recievedDate, name); 
-        });
-      }, error => {
-        logger.error("Error while processing request: " + error);
-        cacheManager.cleanupCache(cacheDir);
-      }, () => {
-        queue.on("end", () => cacheManager.cleanupCache(cacheDir));
-      });
-    });
-    res.json({ status: 'Ok' });
-  } catch (error) {
-    logger.error("Error while processing request /record: ", error);
+  const writers = [];
+  destinations.forEach(destination => {
+    if (Object.keys(config.destinations).includes(destination)) {
+      const confDest = config.destinations[destination];
 
-    res.status(500)
+      switch(confDest.type) {
+        case 'dropbox':
+          writers.push(new DropboxWriter(confDest));
+          break;
+        case 'ftp':
+          writers.push(new FtpWriter(confDest));
+          break;
+        default:
+          logger.warn(`Unknown type "${confDest.type}" configured for destination "${confDest}"`);
+      }
+    }
+  });
+
+  Promise.all(writers.map(w => {w.connect()}))
+  .then(() => {
+    const cacheDir = cacheManager.getCacheDir(recievedDate);
+    const queue = new Queue({
+      concurrent: 1,
+      interval: 1000
+    });
+
+    streamReader.start(cacheDir, recievedDate, streamUrl, duration, partDuration).subscribe(file => {
+      for (let i=0; i < writers.length; i++){
+        queue.enqueue(async () => {
+          await writers[i].upload(file, recievedDate, name); 
+        });
+      }
+    }, error => {
+      logger.error("Error while processing request: " + error);
+      cacheManager.cleanupCache(cacheDir);
+    }, () => {
+      if (queue.isEmpty) {
+        cacheManager.cleanupCache(cacheDir);
+      } else {
+        queue.on("end", () => cacheManager.cleanupCache(cacheDir));
+      }
+    });
+  
+    res.json({ status: 'Ok' });
+  })
+  .catch(error => {
+    logger.error("Error while processing request: " + error);
+    res.status(500);
     res.json({ status: 'Error' });
-  }
+  });
 });
 
 const port = env.PORT || config.api.port || 80;

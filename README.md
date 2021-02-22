@@ -4,6 +4,16 @@ Simple service to asynchronously start consumption of a stream using the Real Ti
 ## Getting started
 There are some requirements in order to get this running.
 
+### Set up file destinations
+RTSP2File needs somewhere to send the files produced from the stream. Currently 2 types of destinations are supported; Dropbox and FTP.
+
+#### Dropbox
+Utilizes the Dropbox API to send the recordings to an app folder.
+To use Dropbox as destination, follow the [Dropbox Getting Started Guide](https://www.dropbox.com/developers/reference/getting-started) to set up your app. Make sure to enable "files.content.read" and "files.content.write" under "Permisisons" for your app. Generate your access token and put it in your config file for RTSP2File config.
+
+#### FTP
+Using the FTP destination type, you can configure a FTP server connection to upload to.
+
 ### Config
 The service expects a config file 'config.yml' to exist in the location /app/config/ or otherwise specified in the env variable 'RTSP2FILE_CONFIG'.
 
@@ -13,11 +23,16 @@ An example _config.yml_ can look like this:
 api:
   port: 80 # HTTP port to listen at
   contextPath: "/" # The API context path
-ftp:
-  host: "ftp.gluffs.eu"
-  user: "cctv"
-  password: "secret_pass"
-  secure: true
+destinations: # Configure where to send the files
+  my_ftp:
+    type: "ftp"
+    host: "ftp.gluffs.eu"
+    user: "cctv"
+    password: "secret_pass"
+    secure: true
+  some_dropbox:
+    type: "dropbox"
+    token: "ACCESS_TOKEN_OF_MY_DROPBOX_APP"
 ```
 
 ### Environment variables
@@ -29,7 +44,7 @@ RTSP2FILE_CONFIG | Config file location | /app/config/config.json
 RTSP2FILE_CACHE | Cache path | /app/cache
 
 ### Volumes
-_/app/config_ - config location
+_/app/config_ - config location\
 _/app/cache_ - cache location, used to cache vido files before uploading
 
 ### Start the container
@@ -38,8 +53,21 @@ docker run -p 80:80 -v /path/to/config/:/app/config -v /path/to/cache/:/app/cach
 ```
 
 ### Use the API
-Sample call
+The API is used to trigger recordings of the RTSP stream.
 
+#### POST /record
+Trigger a recording of a RTSP stream.
+
+**Request body**\
+The request body should be sent in JSON format containing the following name/value pairs:\
+_source_name_ (string) - Name of the recording source, used in destination URL.\
+_stream_url_ (string) - URL of the RTSP stream to record from.\
+_duration_ (number) - The duration to record for.\
+_part_duration_ (number) - When splitting the recording over several files, duration of each part.\
+_destinations_ (array of string) - The destinations (from config) to send the recordings to.
+
+
+#### Sample cURL call
 ```shell
 curl --location --request POST '127.0.0.1:80/record' \
 --header 'Content-Type: application/json' \
@@ -47,7 +75,8 @@ curl --location --request POST '127.0.0.1:80/record' \
     "source_name": "MySource",
     "stream_url": "rtsp://user:pass@camera.example.com:554/cam/realmonitor?channel=1&subtype=0&unicast=true&proto=Onvif",
     "duration": 30,
-    "part_duration": 10    
+    "part_duration": 10,
+    "destinations": ["my_ftp","some_dropbox"]
 }'
 ```
 
