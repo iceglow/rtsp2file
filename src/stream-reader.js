@@ -8,7 +8,7 @@ const { filter, map, mergeMap } = require('rxjs/operators');
 const logger = require('./logging-service').logger;
 
 function start(cacheDir, dateTime, streamUrl, duration, partDuration) {
-  logger.info(`Starting to read stream '${streamUrl}'.`);
+  logger.info(`Starting to read stream '${streamUrl.replace(/:\/\/.*:.*@/, '://')}'.`);
 
   const openRTSP = spawn('openRTSP', [
     '-d', duration,
