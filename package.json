@@ -1,6 +1,6 @@
 {
   "name": "rtsp2file",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Asynchronously start consumption of a RTSP via API and save it to file.",
   "main": "server.js",
   "scripts": {

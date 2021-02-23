@@ -48,37 +48,46 @@ router.post('/record', function (req, res) {
     }
   });
 
-  Promise.all(writers.map(w => w.prepare()))
-  .then(() => {
-    const cacheDir = cacheManager.getCacheDir(recievedDate);
-    const queue = new Queue({
-      concurrent: 1,
-      interval: 1000
-    });
+  const cacheDir = cacheManager.getCacheDir(recievedDate);
+  const queue = new Queue({
+    concurrent: 1,
+    interval: 1,
+    start: false
+  });
 
-    streamReader.start(cacheDir, recievedDate, streamUrl, duration, partDuration).subscribe(file => {
-      for (let i = 0; i < writers.length; i++) {
-        queue.enqueue(async () => {
-          await writers[i].upload(file); 
-        });
-      }
-    }, error => {
-      logger.error("Error while processing request: " + error);
+  streamReader.start(cacheDir, recievedDate, streamUrl, duration, partDuration).subscribe(file => {
+    for (let i = 0; i < writers.length; i++) {
+      queue.enqueue(async () => {
+        await writers[i].upload(file); 
+      });
+    }
+  }, error => {
+    logger.error("Error while processing request: " + error);
+    cacheManager.cleanupCache(cacheDir);
+  }, () => {
+    if (queue.isEmpty) {
       cacheManager.cleanupCache(cacheDir);
-    }, () => {
-      if (queue.isEmpty) {
-        cacheManager.cleanupCache(cacheDir);
-      } else {
-        queue.on("end", () => cacheManager.cleanupCache(cacheDir));
-      }
-    });
+    } else {
+      queue.on("end", () => cacheManager.cleanupCache(cacheDir));
+    }
+  });
 
-    Promise.all(writers.map(w => w.getLink())).then(results => {
+  Promise.all(writers.map(w => w.prepare()))
+  .then(() => {logger.error('starting queue')
+    queue.options.start = true;
+    queue.start();
+
+    Promise.all(writers.map(w => w.getLink()))
+    .then(results => {
       res.json({
         destinations: results,
         status: 'Ok' 
       });
-    })
+    }).catch(error => {
+      logger.error("Error while processing request: " + error);
+      res.status(500);
+      res.json({ status: 'Error' });
+    });
   })
   .catch(error => {
     logger.error("Error while processing request: " + error);
