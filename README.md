@@ -26,10 +26,11 @@ api:
 destinations: # Configure where to send the files
   my_ftp:
     type: "ftp"
-    host: "ftp.gluffs.eu"
+    host: "ftp.example.com"
+    port: 21
     user: "cctv"
     password: "secret_pass"
-    secure: true
+    secure: false
   some_dropbox:
     type: "dropbox"
     token: "ACCESS_TOKEN_OF_MY_DROPBOX_APP"
@@ -66,8 +67,13 @@ _duration_ (number) - The duration to record for.\
 _part_duration_ (number) - When splitting the recording over several files, duration of each part.\
 _destinations_ (array of string) - The destinations (from config) to send the recordings to.
 
+**Response**\
+Response is sent as a JSON structure.\
+Expected fields:\
+_status_ (string) - Ok | Error
+_destinations_ (array of string) - array of URLs to where the files will be stored
 
-#### Sample cURL call
+**Sample cURL call**\
 ```shell
 curl --location --request POST '127.0.0.1:80/record' \
 --header 'Content-Type: application/json' \

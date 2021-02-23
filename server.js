@@ -37,10 +37,10 @@ router.post('/record', function (req, res) {
 
       switch(confDest.type) {
         case 'dropbox':
-          writers.push(new DropboxWriter(confDest));
+          writers.push(new DropboxWriter(destination, name, recievedDate, confDest));
           break;
         case 'ftp':
-          writers.push(new FtpWriter(confDest));
+          writers.push(new FtpWriter(destination, name, recievedDate, confDest));
           break;
         default:
           logger.warn(`Unknown type "${confDest.type}" configured for destination "${confDest}"`);
@@ -48,7 +48,7 @@ router.post('/record', function (req, res) {
     }
   });
 
-  Promise.all(writers.map(w => {w.connect()}))
+  Promise.all(writers.map(w => w.prepare()))
   .then(() => {
     const cacheDir = cacheManager.getCacheDir(recievedDate);
     const queue = new Queue({
@@ -57,9 +57,9 @@ router.post('/record', function (req, res) {
     });
 
     streamReader.start(cacheDir, recievedDate, streamUrl, duration, partDuration).subscribe(file => {
-      for (let i=0; i < writers.length; i++){
+      for (let i = 0; i < writers.length; i++) {
         queue.enqueue(async () => {
-          await writers[i].upload(file, recievedDate, name); 
+          await writers[i].upload(file); 
         });
       }
     }, error => {
@@ -72,8 +72,13 @@ router.post('/record', function (req, res) {
         queue.on("end", () => cacheManager.cleanupCache(cacheDir));
       }
     });
-  
-    res.json({ status: 'Ok' });
+
+    Promise.all(writers.map(w => w.getLink())).then(results => {
+      res.json({
+        destinations: results,
+        status: 'Ok' 
+      });
+    })
   })
   .catch(error => {
     logger.error("Error while processing request: " + error);
